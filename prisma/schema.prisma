@@ -13,81 +13,119 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String?
-  name      String?
+id String @id @default(cuid())
+clerkId String @unique
+email String?
+name String?
 
-  bookings  Booking[]
+bookings Booking[]
 
-  createdAt DateTime @default(now())
+createdAt DateTime @default(now())
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  location    String?
-  date        DateTime
-  price       Int      // cents
-  capacity    Int?     // optional for now
-  isActive    Boolean  @default(true)
+id String @id @default(cuid())
+title String
+description String?
+location String?
+date DateTime
 
-  bookings    Booking[]
+capacity Int?
+isActive Boolean @default(true)
 
-  createdAt   DateTime @default(now())
+// Optional base price (fallback / default)
+basePrice Int?
+
+// Relations
+pricing EventPrice[]
+bookings Booking[]
+
+createdAt DateTime @default(now())
+}
+
+model EventPrice {
+id String @id @default(cuid())
+
+eventId String
+shootType ShootType
+
+price Int
+
+event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+@@unique([eventId, shootType])
 }
 
 model Booking {
-  id                     String   @id @default(cuid())
-  userId                 String
-  eventId                String
+  id        String @id @default(cuid())
 
-  status                 BookingStatus @default(PENDING)
-  paymentStatus          PaymentStatus @default(PENDING)
+  userId    String
+  eventId   String
 
-  stripeSessionId        String? @unique
-  stripePaymentIntentId  String? @unique
+  shootType ShootType
 
-  participantData        Json?
+  status    BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
 
-  user                   User  @relation(fields: [userId], references: [id])
-  event                  Event @relation(fields: [eventId], references: [id])
-  gallery                Gallery?
+  stripeSessionId        String?
+  stripePaymentIntentId  String?
 
-  createdAt              DateTime @default(now())
+  paidAt DateTime?
 
-  @@unique([userId, eventId])
+  participantData Json?
+
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  gallery Gallery?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId, shootType])
 }
 
+
 model Gallery {
-  id           String   @id @default(cuid())
-  bookingId    String   @unique
+id String @id @default(cuid())
 
-  downloadUrl  String?   // 👈 make optional
-  isReady      Boolean   @default(false)
+bookingId String @unique
 
-  downloaded   Boolean   @default(false)
-  downloadedAt DateTime?
+downloadUrl String?
+isReady Boolean @default(false)
 
-  rating       Int?
-  review       String?
+downloaded Boolean @default(false)
+downloadedAt DateTime?
 
-  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+rating Int?
+review String?
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+}
+
+model StripeEvent {
+  id        String   @id
+  type      String
+  createdAt DateTime @default(now())
+}
+
+enum ShootType {
+INDIVIDUAL
+COUPLE
+GROUP
+EVENT
 }
 
 enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
+PENDING
+CONFIRMED
+CANCELLED
 }
 
 enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
+PENDING
+PAID
+FAILED
 }
-
