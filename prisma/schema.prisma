@@ -61,15 +61,22 @@ model Booking {
 }
 
 model Gallery {
-  id          String   @id @default(cuid())
-  bookingId   String   @unique
+  id           String   @id @default(cuid())
+  bookingId    String   @unique
 
-  downloadUrl String
-  isReady     Boolean  @default(false)
+  downloadUrl  String?   // 👈 make optional
+  isReady      Boolean   @default(false)
 
-  booking     Booking  @relation(fields: [bookingId], references: [id])
+  downloaded   Boolean   @default(false)
+  downloadedAt DateTime?
 
-  createdAt   DateTime @default(now())
+  rating       Int?
+  review       String?
+
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 enum BookingStatus {
@@ -83,3 +90,4 @@ enum PaymentStatus {
   PAID
   FAILED
 }
+
